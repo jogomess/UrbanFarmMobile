@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert, Animated, Easing } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import axios from 'axios';
 
@@ -17,6 +17,18 @@ type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const screenAnimatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(screenAnimatedValue, {
+      toValue: 1,
+      duration: 1000,
+      easing: Easing.out(Easing.exp),
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -34,8 +46,41 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
   };
 
+  const toggleMostrarSenha = () => {
+    setMostrarSenha(!mostrarSenha);
+    Animated.timing(animatedValue, {
+      toValue: mostrarSenha ? 0 : 1,
+      duration: 300,
+      easing: Easing.ease,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const animatedStyle = {
+    transform: [
+      {
+        rotate: animatedValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        }),
+      },
+    ],
+  };
+
+  const screenAnimatedStyle = {
+    opacity: screenAnimatedValue,
+    transform: [
+      {
+        scale: screenAnimatedValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.8, 1],
+        }),
+      },
+    ],
+  };
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, screenAnimatedStyle]}>
       {/* Logo da Urban Farm */}
       <Image source={require('../../assets/Captura_de_tela_2024-10-16_165655-removebg-preview.png.png')} style={styles.logo} />
 
@@ -50,14 +95,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       />
 
       {/* Campo de Senha */}
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        placeholderTextColor="#888"
-        value={senha}
-        onChangeText={setSenha}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.inputSenha}
+          placeholder="Senha"
+          placeholderTextColor="#888"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry={!mostrarSenha}
+        />
+        <TouchableOpacity onPress={toggleMostrarSenha} style={styles.toggleButton}>
+          <Animated.Text style={[styles.toggleButtonText, animatedStyle]}>{mostrarSenha ? '🙈' : '👁️'}</Animated.Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Botão de Login */}
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
@@ -73,7 +123,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('RegisterEmployee')}>
         <Text style={styles.registerButtonText}>Cadastrar</Text>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -100,6 +150,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+  },
+  inputSenha: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 15,
+  },
+  toggleButton: {
+    paddingHorizontal: 10,
+  },
+  toggleButtonText: {
+    fontSize: 18,
   },
   button: {
     backgroundColor: '#0288D1',

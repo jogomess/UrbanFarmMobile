@@ -113,10 +113,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
       <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>
-          Urban Farm é uma plataforma para conectar fornecedores, gerenciar produtos e funcionários, facilitando o
-          gerenciamento da sua fazenda urbana de maneira eficiente e sustentável.
-        </Text>
+        <Text style={styles.infoText}>Estamos aqui por você!</Text>
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate('Supplier')}>
@@ -161,18 +158,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffffff', // Fundo branco
   },
   saudacao: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#0288D1',
+    color: '#0288D1', // Azul
     textAlign: 'center',
     marginBottom: 10,
     marginTop: 20,
   },
   logoutButton: {
-    backgroundColor: '#FF5733',
+    backgroundColor: '#dc143c', // Vermelho
     padding: 10,
     borderRadius: 5,
     alignSelf: 'flex-end',
@@ -184,7 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   infoContainer: {
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#ffffff', // Fundo branco para o container "Estamos aqui por você"
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
@@ -198,17 +195,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#0288D1',
+    color: '#000000', 
     marginBottom: 10,
     marginTop: 20,
     marginHorizontal: 20,
   },
   card: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#fafafa',
     borderRadius: 10,
     padding: 15,
     marginHorizontal: 10,
-    width: Dimensions.get('window').width * 0.8, // Tamanho dinâmico do card
+    width: Dimensions.get('window').width * 0.8,
     maxWidth: 300,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -219,7 +216,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0288D1',
+    color: '#0288D1', 
   },
   cardSubtitle: {
     fontSize: 16,
