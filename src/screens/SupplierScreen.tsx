@@ -22,11 +22,13 @@ type Fornecedor = {
 
 const SupplierScreen: React.FC<SupplierScreenProps> = () => {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
+  const [fornecedorID, setFornecedorID] = useState('');
   const [nome, setNome] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [endereco, setEndereco] = useState('');
   const [telefone, setTelefone] = useState('');
   const [email, setEmail] = useState('');
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   useEffect(() => {
     fetchFornecedores();
@@ -46,21 +48,30 @@ const SupplierScreen: React.FC<SupplierScreenProps> = () => {
       const newFornecedor = { nome, cnpj, endereco, telefone, email };
       await axios.post('http://10.0.2.2:5078/api/Fornecedores', newFornecedor);
       fetchFornecedores();
-      setNome('');
-      setCnpj('');
-      setEndereco('');
-      setTelefone('');
-      setEmail('');
+      clearForm();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível adicionar o fornecedor.');
     }
   };
 
-  const handleUpdateFornecedor = async (id: number) => {
+  const handleUpdateFornecedor = async () => {
+    if (!fornecedorID) {
+      Alert.alert('Erro', 'Fornecedor ID é necessário para atualização.');
+      return;
+    }
     try {
-      const updatedFornecedor = { nome, cnpj, endereco, telefone, email };
-      await axios.put(`http://10.0.2.2:5078/api/Fornecedores/${id}`, updatedFornecedor);
+      const updatedFornecedor = {
+        fornecedorID: parseInt(fornecedorID),
+        nome,
+        cnpj,
+        endereco,
+        telefone,
+        email,
+      };
+      await axios.put(`http://10.0.2.2:5078/api/Fornecedores/${fornecedorID}`, updatedFornecedor);
       fetchFornecedores();
+      clearForm();
+      setIsUpdateMode(false);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar o fornecedor.');
     }
@@ -75,6 +86,25 @@ const SupplierScreen: React.FC<SupplierScreenProps> = () => {
     }
   };
 
+  const handleSelectFornecedorForUpdate = (item: Fornecedor) => {
+    setFornecedorID(item.fornecedorID.toString());
+    setNome(item.nome);
+    setCnpj(item.cnpj);
+    setEndereco(item.endereco);
+    setTelefone(item.telefone);
+    setEmail(item.email);
+    setIsUpdateMode(true);
+  };
+
+  const clearForm = () => {
+    setFornecedorID('');
+    setNome('');
+    setCnpj('');
+    setEndereco('');
+    setTelefone('');
+    setEmail('');
+  };
+
   const renderItem = ({ item }: { item: Fornecedor }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.nome}</Text>
@@ -82,8 +112,8 @@ const SupplierScreen: React.FC<SupplierScreenProps> = () => {
       <Text>Endereço: {item.endereco}</Text>
       <Text>Telefone: {item.telefone}</Text>
       <Text>Email: {item.email}</Text>
-      <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateFornecedor(item.fornecedorID)}>
-        <Text style={styles.buttonText}>Atualizar</Text>
+      <TouchableOpacity style={styles.updateButton} onPress={() => handleSelectFornecedorForUpdate(item)}>
+        <Text style={styles.buttonText}>Selecionar Fornecedor para Atualizar</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFornecedor(item.fornecedorID)}>
         <Text style={styles.buttonText}>Deletar</Text>
@@ -95,6 +125,14 @@ const SupplierScreen: React.FC<SupplierScreenProps> = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Fornecedores</Text>
 
+      {isUpdateMode && (
+        <TextInput
+          style={styles.input}
+          placeholder="Fornecedor ID (para atualização)"
+          value={fornecedorID}
+          editable={false}
+        />
+      )}
       <TextInput
         style={styles.input}
         placeholder="Nome"
@@ -126,9 +164,15 @@ const SupplierScreen: React.FC<SupplierScreenProps> = () => {
         onChangeText={setEmail}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddFornecedor}>
-        <Text style={styles.buttonText}>Adicionar Fornecedor</Text>
-      </TouchableOpacity>
+      {isUpdateMode ? (
+        <TouchableOpacity style={styles.updateButton} onPress={handleUpdateFornecedor}>
+          <Text style={styles.buttonText}>Atualizar Fornecedor</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.addButton} onPress={handleAddFornecedor}>
+          <Text style={styles.buttonText}>Adicionar Fornecedor</Text>
+        </TouchableOpacity>
+      )}
 
       <FlatList
         data={fornecedores}
@@ -168,6 +212,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  updateButton: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
@@ -182,13 +233,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  updateButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
   },
   deleteButton: {
     backgroundColor: '#FF5733',

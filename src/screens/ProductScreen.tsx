@@ -16,6 +16,7 @@ type Produto = {
   produtoID: number;
   nomeProduto: string;
   categoria: string;
+  preco: number;
   quantidade: number;
   fornecedorID: number;
   dataCadastro: string;
@@ -23,10 +24,13 @@ type Produto = {
 
 const ProductScreen: React.FC<ProductScreenProps> = () => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [produtoID, setProdutoID] = useState('');
   const [nomeProduto, setNomeProduto] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [preco, setPreco] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [fornecedorID, setFornecedorID] = useState('');
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   useEffect(() => {
     fetchProdutos();
@@ -43,23 +47,41 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
 
   const handleAddProduto = async () => {
     try {
-      const newProduto = { nomeProduto, categoria, quantidade: parseInt(quantidade), fornecedorID: parseInt(fornecedorID) };
+      const newProduto = {
+        nomeProduto,
+        categoria,
+        preco: parseFloat(preco),
+        quantidade: parseInt(quantidade),
+        fornecedorID: parseInt(fornecedorID),
+        dataCadastro: new Date().toISOString(),
+      };
       await axios.post('http://10.0.2.2:5078/api/Produtos', newProduto);
       fetchProdutos();
-      setNomeProduto('');
-      setCategoria('');
-      setQuantidade('');
-      setFornecedorID('');
+      clearForm();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível adicionar o produto.');
     }
   };
 
-  const handleUpdateProduto = async (id: number) => {
+  const handleUpdateProduto = async () => {
+    if (!produtoID) {
+      Alert.alert('Erro', 'Produto ID é necessário para atualização.');
+      return;
+    }
     try {
-      const updatedProduto = { nomeProduto, categoria, quantidade: parseInt(quantidade), fornecedorID: parseInt(fornecedorID) };
-      await axios.put(`http://10.0.2.2:5078/api/Produtos/${id}`, updatedProduto);
+      const updatedProduto = {
+        produtoID: parseInt(produtoID),
+        nomeProduto,
+        categoria,
+        preco: parseFloat(preco),
+        quantidade: parseInt(quantidade),
+        fornecedorID: parseInt(fornecedorID),
+        dataCadastro: new Date().toISOString(),
+      };
+      await axios.put(`http://10.0.2.2:5078/api/Produtos/${produtoID}`, updatedProduto);
       fetchProdutos();
+      clearForm();
+      setIsUpdateMode(false);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar o produto.');
     }
@@ -74,14 +96,34 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
     }
   };
 
+  const handleSelectProdutoForUpdate = (item: Produto) => {
+    setProdutoID(item.produtoID.toString());
+    setNomeProduto(item.nomeProduto);
+    setCategoria(item.categoria);
+    setPreco(item.preco.toString());
+    setQuantidade(item.quantidade.toString());
+    setFornecedorID(item.fornecedorID.toString());
+    setIsUpdateMode(true);
+  };
+
+  const clearForm = () => {
+    setProdutoID('');
+    setNomeProduto('');
+    setCategoria('');
+    setPreco('');
+    setQuantidade('');
+    setFornecedorID('');
+  };
+
   const renderItem = ({ item }: { item: Produto }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.nomeProduto}</Text>
       <Text>Categoria: {item.categoria}</Text>
+      <Text>Preço: {item.preco}</Text>
       <Text>Quantidade: {item.quantidade}</Text>
       <Text>Fornecedor ID: {item.fornecedorID}</Text>
-      <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateProduto(item.produtoID)}>
-        <Text style={styles.buttonText}>Atualizar</Text>
+      <TouchableOpacity style={styles.updateButton} onPress={() => handleSelectProdutoForUpdate(item)}>
+        <Text style={styles.buttonText}>Selecionar Produto para Atualizar</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteProduto(item.produtoID)}>
         <Text style={styles.buttonText}>Deletar</Text>
@@ -93,6 +135,14 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Produtos</Text>
 
+      {isUpdateMode && (
+        <TextInput
+          style={styles.input}
+          placeholder="Produto ID (para atualização)"
+          value={produtoID}
+          editable={false}
+        />
+      )}
       <TextInput
         style={styles.input}
         placeholder="Nome do Produto"
@@ -104,6 +154,13 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
         placeholder="Categoria"
         value={categoria}
         onChangeText={setCategoria}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Preço"
+        value={preco}
+        onChangeText={setPreco}
+        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
@@ -120,9 +177,15 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
         keyboardType="numeric"
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddProduto}>
-        <Text style={styles.buttonText}>Adicionar Produto</Text>
-      </TouchableOpacity>
+      {isUpdateMode ? (
+        <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProduto}>
+          <Text style={styles.buttonText}>Atualizar Produto</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.addButton} onPress={handleAddProduto}>
+          <Text style={styles.buttonText}>Adicionar Produto</Text>
+        </TouchableOpacity>
+      )}
 
       <FlatList
         data={produtos}
@@ -162,6 +225,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  updateButton: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
@@ -176,13 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  updateButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
   },
   deleteButton: {
     backgroundColor: '#FF5733',

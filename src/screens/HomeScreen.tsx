@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, Easing, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, Easing, ScrollView, Dimensions, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 // Definir os tipos das rotas da aplicação
@@ -35,6 +35,7 @@ type Funcionario = {
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [animatedValue] = useState(new Animated.Value(0));
   const [saudacao, setSaudacao] = useState('');
+  const [nivelAcesso, setNivelAcesso] = useState(1); // Simulação do nível de acesso do usuário
 
   // Dados de exemplo para Fornecedores, Produtos e Funcionários
   const fornecedores: Fornecedor[] = [
@@ -64,11 +65,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     // Definir saudação com base no horário atual
     const horaAtual = new Date().getHours();
     if (horaAtual < 12) {
-      setSaudacao('Bom dia');
+      setSaudacao('Bom dia!');
     } else if (horaAtual < 18) {
-      setSaudacao('Boa tarde');
+      setSaudacao('Boa tarde!');
     } else {
-      setSaudacao('Boa noite');
+      setSaudacao('Boa noite!');
     }
   }, []);
 
@@ -97,7 +98,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     } else if (type === 'Produto') {
       navigation.navigate('Product');
     } else if (type === 'Funcionário') {
-      navigation.navigate('Employee');
+      // Verifica se o nível de acesso é 1 antes de permitir a navegação para Employee
+      if (nivelAcesso === 1) {
+        navigation.navigate('Employee');
+      } else {
+        Alert.alert('Acesso Negado', 'Você não tem permissão para acessar esta seção.');
+      }
     }
   };
 
@@ -114,6 +120,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       </TouchableOpacity>
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Estamos aqui por você!</Text>
+        <Text style={styles.infoText}>We are here for you!</Text>
       </View>
 
       <TouchableOpacity onPress={() => navigation.navigate('Supplier')}>
@@ -140,7 +147,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.flatListContainer}
       />
 
-      <TouchableOpacity onPress={() => navigation.navigate('Employee')}>
+      <TouchableOpacity onPress={() => handleNavigate('', 'Funcionário')}>
         <Text style={styles.sectionTitle}>Funcionários</Text>
       </TouchableOpacity>
       <FlatList
@@ -195,7 +202,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#000000', 
+    color: '#000000',
     marginBottom: 10,
     marginTop: 20,
     marginHorizontal: 20,
@@ -216,7 +223,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0288D1', 
+    color: '#0288D1',
   },
   cardSubtitle: {
     fontSize: 16,

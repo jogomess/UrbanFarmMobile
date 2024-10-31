@@ -20,18 +20,22 @@ type Funcionario = {
   dataNascimento: string;
   email: string;
   funcao: string;
+  senhaHash: string;
   dataCadastro: string;
   nivelAcesso: number;
 };
 
 const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [funcionarioID, setFuncionarioID] = useState('');
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [email, setEmail] = useState('');
   const [funcao, setFuncao] = useState('');
+  const [senhaHash, setSenhaHash] = useState('');
   const [nivelAcesso, setNivelAcesso] = useState('');
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   useEffect(() => {
     fetchFuncionarios();
@@ -48,25 +52,45 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
 
   const handleAddFuncionario = async () => {
     try {
-      const newFuncionario = { nome, cpf, dataNascimento, email, funcao, nivelAcesso: parseInt(nivelAcesso) };
+      const newFuncionario = {
+        nome,
+        cpf,
+        dataNascimento,
+        email,
+        funcao,
+        senhaHash,
+        nivelAcesso: parseInt(nivelAcesso),
+        dataCadastro: new Date().toISOString(),
+      };
       await axios.post('http://10.0.2.2:5078/api/Funcionarios', newFuncionario);
       fetchFuncionarios();
-      setNome('');
-      setCpf('');
-      setDataNascimento('');
-      setEmail('');
-      setFuncao('');
-      setNivelAcesso('');
+      clearForm();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível adicionar o funcionário.');
     }
   };
 
-  const handleUpdateFuncionario = async (id: number) => {
+  const handleUpdateFuncionario = async () => {
+    if (!funcionarioID) {
+      Alert.alert('Erro', 'ID do Funcionário é necessário para atualização.');
+      return;
+    }
     try {
-      const updatedFuncionario = { nome, cpf, dataNascimento, email, funcao, nivelAcesso: parseInt(nivelAcesso) };
-      await axios.put(`http://10.0.2.2:5078/api/Funcionarios/${id}`, updatedFuncionario);
+      const updatedFuncionario = {
+        funcionarioID: parseInt(funcionarioID),
+        nome,
+        cpf,
+        dataNascimento,
+        email,
+        funcao,
+        senhaHash,
+        nivelAcesso: parseInt(nivelAcesso),
+        dataCadastro: new Date().toISOString(),
+      };
+      await axios.put(`http://10.0.2.2:5078/api/Funcionarios/${funcionarioID}`, updatedFuncionario);
       fetchFuncionarios();
+      clearForm();
+      setIsUpdateMode(false);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar o funcionário.');
     }
@@ -81,6 +105,29 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
     }
   };
 
+  const handleSelectFuncionarioForUpdate = (item: Funcionario) => {
+    setFuncionarioID(item.funcionarioID.toString());
+    setNome(item.nome);
+    setCpf(item.cpf);
+    setDataNascimento(item.dataNascimento);
+    setEmail(item.email);
+    setFuncao(item.funcao);
+    setSenhaHash(item.senhaHash);
+    setNivelAcesso(item.nivelAcesso.toString());
+    setIsUpdateMode(true);
+  };
+
+  const clearForm = () => {
+    setFuncionarioID('');
+    setNome('');
+    setCpf('');
+    setDataNascimento('');
+    setEmail('');
+    setFuncao('');
+    setSenhaHash('');
+    setNivelAcesso('');
+  };
+
   const renderItem = ({ item }: { item: Funcionario }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.nome}</Text>
@@ -89,8 +136,8 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
       <Text>Email: {item.email}</Text>
       <Text>Função: {item.funcao}</Text>
       <Text>Nível de Acesso: {item.nivelAcesso}</Text>
-      <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateFuncionario(item.funcionarioID)}>
-        <Text style={styles.buttonText}>Atualizar</Text>
+      <TouchableOpacity style={styles.updateButton} onPress={() => handleSelectFuncionarioForUpdate(item)}>
+        <Text style={styles.buttonText}>Selecionar Funcionário para Atualizar</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFuncionario(item.funcionarioID)}>
         <Text style={styles.buttonText}>Deletar</Text>
@@ -102,6 +149,14 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Funcionários</Text>
 
+      {isUpdateMode && (
+        <TextInput
+          style={styles.input}
+          placeholder="ID do Funcionário (para atualização)"
+          value={funcionarioID}
+          editable={false}
+        />
+      )}
       <TextInput
         style={styles.input}
         placeholder="Nome"
@@ -134,15 +189,27 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
       />
       <TextInput
         style={styles.input}
+        placeholder="Senha"
+        value={senhaHash}
+        onChangeText={setSenhaHash}
+      />
+      <TextInput
+        style={styles.input}
         placeholder="Nível de Acesso"
         value={nivelAcesso}
         onChangeText={setNivelAcesso}
         keyboardType="numeric"
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddFuncionario}>
-        <Text style={styles.buttonText}>Adicionar Funcionário</Text>
-      </TouchableOpacity>
+      {isUpdateMode ? (
+        <TouchableOpacity style={styles.updateButton} onPress={handleUpdateFuncionario}>
+          <Text style={styles.buttonText}>Atualizar Funcionário</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.addButton} onPress={handleAddFuncionario}>
+          <Text style={styles.buttonText}>Adicionar Funcionário</Text>
+        </TouchableOpacity>
+      )}
 
       <FlatList
         data={funcionarios}
@@ -182,6 +249,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  updateButton: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
@@ -196,13 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  updateButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
   },
   deleteButton: {
     backgroundColor: '#FF5733',
