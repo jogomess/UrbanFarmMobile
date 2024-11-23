@@ -23,6 +23,9 @@ type Produto = {
 };
 
 const ProductScreen: React.FC<ProductScreenProps> = () => {
+
+  const [quantidadeVenda, setQuantidadeVenda] = useState('');
+  const [cliente, setCliente] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [produtoID, setProdutoID] = useState('');
   const [nomeProduto, setNomeProduto] = useState('');
@@ -114,6 +117,8 @@ const ProductScreen: React.FC<ProductScreenProps> = () => {
     setQuantidade('');
     setFornecedorID('');
   };
+
+  
 
   const renderItem = ({ item }: { item: Produto }) => (
     <View style={styles.card}>

@@ -25,7 +25,7 @@ type Funcionario = {
   nivelAcesso: number;
 };
 
-const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
+const EmployeeScreen: React.FC<EmployeeScreenProps> = ({ navigation }) => {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [funcionarioID, setFuncionarioID] = useState('');
   const [nome, setNome] = useState('');
@@ -34,10 +34,12 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   const [email, setEmail] = useState('');
   const [funcao, setFuncao] = useState('');
   const [senhaHash, setSenhaHash] = useState('');
-  const [nivelAcesso, setNivelAcesso] = useState('');
+  const [nivelAcesso, setNivelAcesso] = useState(0); // Assumir o nível de acesso do usuário logado
   const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   useEffect(() => {
+    // Assumindo que o nível de acesso é obtido de algum lugar (por exemplo, API ou armazenamento local)
+    setNivelAcesso(1); // Simulação: ajustar conforme necessário
     fetchFuncionarios();
   }, []);
 
@@ -51,6 +53,10 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   };
 
   const handleAddFuncionario = async () => {
+    if (nivelAcesso !== 1) {
+      Alert.alert('Acesso Negado', 'Você não tem permissão para adicionar funcionários.');
+      return;
+    }
     try {
       const newFuncionario = {
         nome,
@@ -59,7 +65,7 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
         email,
         funcao,
         senhaHash,
-        nivelAcesso: parseInt(nivelAcesso),
+        nivelAcesso: parseInt(nivelAcesso.toString()),
         dataCadastro: new Date().toISOString(),
       };
       await axios.post('http://10.0.2.2:5078/api/Funcionarios', newFuncionario);
@@ -71,6 +77,10 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   };
 
   const handleUpdateFuncionario = async () => {
+    if (nivelAcesso !== 1) {
+      Alert.alert('Acesso Negado', 'Você não tem permissão para atualizar funcionários.');
+      return;
+    }
     if (!funcionarioID) {
       Alert.alert('Erro', 'ID do Funcionário é necessário para atualização.');
       return;
@@ -84,7 +94,7 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
         email,
         funcao,
         senhaHash,
-        nivelAcesso: parseInt(nivelAcesso),
+        nivelAcesso: parseInt(nivelAcesso.toString()),
         dataCadastro: new Date().toISOString(),
       };
       await axios.put(`http://10.0.2.2:5078/api/Funcionarios/${funcionarioID}`, updatedFuncionario);
@@ -97,6 +107,10 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   };
 
   const handleDeleteFuncionario = async (id: number) => {
+    if (nivelAcesso !== 1) {
+      Alert.alert('Acesso Negado', 'Você não tem permissão para deletar funcionários.');
+      return;
+    }
     try {
       await axios.delete(`http://10.0.2.2:5078/api/Funcionarios/${id}`);
       fetchFuncionarios();
@@ -106,6 +120,10 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
   };
 
   const handleSelectFuncionarioForUpdate = (item: Funcionario) => {
+    if (nivelAcesso !== 1) {
+      Alert.alert('Acesso Negado', 'Você não tem permissão para atualizar funcionários.');
+      return;
+    }
     setFuncionarioID(item.funcionarioID.toString());
     setNome(item.nome);
     setCpf(item.cpf);
@@ -113,7 +131,7 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
     setEmail(item.email);
     setFuncao(item.funcao);
     setSenhaHash(item.senhaHash);
-    setNivelAcesso(item.nivelAcesso.toString());
+    setNivelAcesso(item.nivelAcesso);
     setIsUpdateMode(true);
   };
 
@@ -125,7 +143,7 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
     setEmail('');
     setFuncao('');
     setSenhaHash('');
-    setNivelAcesso('');
+    setNivelAcesso(0);
   };
 
   const renderItem = ({ item }: { item: Funcionario }) => (
@@ -136,14 +154,27 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
       <Text>Email: {item.email}</Text>
       <Text>Função: {item.funcao}</Text>
       <Text>Nível de Acesso: {item.nivelAcesso}</Text>
-      <TouchableOpacity style={styles.updateButton} onPress={() => handleSelectFuncionarioForUpdate(item)}>
-        <Text style={styles.buttonText}>Selecionar Funcionário para Atualizar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFuncionario(item.funcionarioID)}>
-        <Text style={styles.buttonText}>Deletar</Text>
-      </TouchableOpacity>
+      {nivelAcesso === 1 && (
+        <>
+          <TouchableOpacity style={styles.updateButton} onPress={() => handleSelectFuncionarioForUpdate(item)}>
+            <Text style={styles.buttonText}>Selecionar Funcionário para Atualizar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFuncionario(item.funcionarioID)}>
+            <Text style={styles.buttonText}>Deletar</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
+
+  if (nivelAcesso !== 1) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Acesso Negado</Text>
+        <Text>Você não tem permissão para acessar esta seção.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -196,8 +227,8 @@ const EmployeeScreen: React.FC<EmployeeScreenProps> = () => {
       <TextInput
         style={styles.input}
         placeholder="Nível de Acesso"
-        value={nivelAcesso}
-        onChangeText={setNivelAcesso}
+        value={nivelAcesso.toString()}
+        onChangeText={(value) => setNivelAcesso(Number(value))}
         keyboardType="numeric"
       />
 

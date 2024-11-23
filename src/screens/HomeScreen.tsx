@@ -1,43 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, Easing, ScrollView, Dimensions, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-// Definir os tipos das rotas da aplicação
-type RootStackParamList = {
-  Home: undefined;
-  Login: undefined;
-  Employee: undefined;
-  Product: undefined;
-  Supplier: undefined;
-};
-
-// Definir as props da HomeScreen
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-type Fornecedor = {
-  id: string;
-  nome: string;
-  email: string;
-};
-
-type Produto = {
-  id: string;
-  nome: string;
-  categoria: string;
-};
-
-type Funcionario = {
-  id: string;
-  nome: string;
-  funcao: string;
-};
+type Fornecedor = { id: string; nome: string; email: string; };
+type Produto = { id: string; nome: string; categoria: string; };
+type Funcionario = { id: string; nome: string; funcao: string; };
+type Venda = { id: string; produto: string; quantidade: number; cliente: string };
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [animatedValue] = useState(new Animated.Value(0));
   const [saudacao, setSaudacao] = useState('');
-  const [nivelAcesso, setNivelAcesso] = useState(1); // Simulação do nível de acesso do usuário
+  const [nivelAcesso, setNivelAcesso] = useState(1);
 
-  // Dados de exemplo para Fornecedores, Produtos e Funcionários
   const fornecedores: Fornecedor[] = [
     { id: '1', nome: 'Fornecedor A', email: 'fornecedorA@example.com' },
     { id: '2', nome: 'Fornecedor B', email: 'fornecedorB@example.com' },
@@ -53,8 +30,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     { id: '2', nome: 'Funcionario B', funcao: 'Analista' },
   ];
 
+  const vendas: Venda[] = [
+    { id: '1', produto: 'Produto A', quantidade: 10, cliente: 'Cliente X' },
+    { id: '2', produto: 'Produto B', quantidade: 5, cliente: 'Cliente Y' },
+  ];
+
   useEffect(() => {
-    // Animação inicial
     Animated.timing(animatedValue, {
       toValue: 1,
       duration: 1000,
@@ -62,52 +43,42 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       useNativeDriver: true,
     }).start();
 
-    // Definir saudação com base no horário atual
     const horaAtual = new Date().getHours();
-    if (horaAtual < 12) {
-      setSaudacao('Bom dia!');
-    } else if (horaAtual < 18) {
-      setSaudacao('Boa tarde!');
-    } else {
-      setSaudacao('Boa noite!');
-    }
+    setSaudacao(horaAtual < 13 ? 'Bom dia! ' : horaAtual < 18 ? 'Boa tarde! ' : 'Boa noite! ');
   }, []);
 
-  // Renderizar Item
-  const renderItem = ({ item, type }: { item: Fornecedor | Produto | Funcionario; type: string }) => (
+  const renderItem = ({ item, type }: { item: Funcionario | Fornecedor | Produto | Venda; type: string }) => (
     <TouchableOpacity onPress={() => handleNavigate(item.id, type)}>
       <Animated.View style={[styles.card, { opacity: animatedValue }]}>
         <Text style={styles.cardTitle}>
-          {type} - {item.nome}
+          {type} - {type === 'Venda' ? (item as Venda).produto : (item as Fornecedor | Produto | Funcionario).nome}
         </Text>
         <Text style={styles.cardSubtitle}>
-          {type === 'Fornecedor'
-            ? `Email: ${(item as Fornecedor).email}`
-            : type === 'Produto'
-            ? `Categoria: ${(item as Produto).categoria}`
-            : `Função: ${(item as Funcionario).funcao}`}
+          {type === 'Fornecedor' && `Email: ${(item as Fornecedor).email}`}
+          {type === 'Produto' && `Categoria: ${(item as Produto).categoria}`}
+          {type === 'Funcionário' && `Função: ${(item as Funcionario).funcao}`}
+          {type === 'Venda' && `Quantidade: ${(item as Venda).quantidade}, Cliente: ${(item as Venda).cliente}`}
         </Text>
       </Animated.View>
     </TouchableOpacity>
   );
 
-  // Função para navegação
   const handleNavigate = (id: string, type: string) => {
     if (type === 'Fornecedor') {
       navigation.navigate('Supplier');
     } else if (type === 'Produto') {
       navigation.navigate('Product');
     } else if (type === 'Funcionário') {
-      // Verifica se o nível de acesso é 1 antes de permitir a navegação para Employee
       if (nivelAcesso === 1) {
         navigation.navigate('Employee');
       } else {
         Alert.alert('Acesso Negado', 'Você não tem permissão para acessar esta seção.');
       }
+    } else if (type === 'Venda') {
+      navigation.navigate('Venda');
     }
   };
 
-  // Função para logout
   const handleLogout = () => {
     navigation.replace('Login');
   };
@@ -118,10 +89,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>Estamos aqui por você!</Text>
-        <Text style={styles.infoText}>We are here for you!</Text>
-      </View>
 
       <TouchableOpacity onPress={() => navigation.navigate('Supplier')}>
         <Text style={styles.sectionTitle}>Fornecedores</Text>
@@ -147,13 +114,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         contentContainerStyle={styles.flatListContainer}
       />
 
-      <TouchableOpacity onPress={() => handleNavigate('', 'Funcionário')}>
-        <Text style={styles.sectionTitle}>Funcionários</Text>
+      {nivelAcesso === 1 && (
+        <>
+          <TouchableOpacity onPress={() => handleNavigate('', 'Funcionário')}>
+            <Text style={styles.sectionTitle}>Funcionários</Text>
+          </TouchableOpacity>
+          <FlatList
+            data={funcionarios}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => renderItem({ item, type: 'Funcionário' })}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContainer}
+          />
+        </>
+      )}
+
+      <TouchableOpacity onPress={() => handleNavigate('', 'Venda')}>
+        <Text style={styles.sectionTitle}>Vendas</Text>
       </TouchableOpacity>
       <FlatList
-        data={funcionarios}
+        data={vendas}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => renderItem({ item, type: 'Funcionário' })}
+        renderItem={({ item }) => renderItem({ item, type: 'Venda' })}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.flatListContainer}
@@ -165,51 +148,42 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', // Fundo branco
+    backgroundColor: '#f0f4f7',
   },
   saudacao: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#0288D1', // Azul
+    color: '#ff5722',
     textAlign: 'center',
     marginBottom: 10,
     marginTop: 20,
   },
   logoutButton: {
-    backgroundColor: '#dc143c', // Vermelho
+    backgroundColor: '#ffffff',
+    borderColor: '#dc143c',
+    borderWidth: 1,
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
     alignSelf: 'flex-end',
     marginBottom: 10,
     marginRight: 20,
+    elevation: 5,
   },
   logoutButtonText: {
-    color: '#ffffff',
+    color: '#dc143c',
     fontWeight: 'bold',
-  },
-  infoContainer: {
-    backgroundColor: '#ffffff', // Fundo branco para o container "Estamos aqui por você"
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    marginHorizontal: 20,
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#000000',
+    color: '#000',
     marginBottom: 10,
     marginTop: 20,
     marginHorizontal: 20,
   },
   card: {
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 15,
     marginHorizontal: 10,
     width: Dimensions.get('window').width * 0.8,
@@ -223,7 +197,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0288D1',
+    color: '#ff5722',
   },
   cardSubtitle: {
     fontSize: 16,

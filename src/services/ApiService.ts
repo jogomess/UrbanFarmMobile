@@ -21,5 +21,15 @@ export const ApiService = {
     }
   },
 
+  registrarVenda: async (venda: any) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/Vendas`, venda);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao registrar a venda:', error);
+      throw new Error('Erro ao registrar a venda');
+    }
+  },
+
   // Outros métodos de API, como getFuncionarios, etc.
 };

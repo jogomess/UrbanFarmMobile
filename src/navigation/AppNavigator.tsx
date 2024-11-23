@@ -8,9 +8,10 @@ import SupplierScreen from '../screens/SupplierScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterEmployeeScreen from '../screens/RegisterEmployeeScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import VendaScreen from '../screens/VendasScreen'; // Importar a VendaScreen
 
 // Definir os tipos das rotas da aplicação
-type RootStackParamList = {
+export type RootStackParamList = {
   Login: undefined;
   Home: undefined;
   Employee: undefined;
@@ -18,6 +19,7 @@ type RootStackParamList = {
   Supplier: undefined;
   RegisterEmployee: undefined;
   ForgotPassword: undefined;
+  Venda: undefined; // Adicionar a rota de Venda
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,13 +56,21 @@ const AppNavigator: React.FC = () => {
           component={SupplierScreen} 
           options={{ title: 'Fornecedores' }}
         />
-        <Stack.Screen name="RegisterEmployee" 
+        <Stack.Screen 
+          name="RegisterEmployee" 
           component={RegisterEmployeeScreen} 
           options={{ title: 'Cadastrar Colaborador' }} 
         />
-        <Stack.Screen name="ForgotPassword" 
+        <Stack.Screen 
+          name="ForgotPassword" 
           component={ForgotPasswordScreen} 
-          options={{ title: 'Esqueci Minha Senha' }} />
+          options={{ title: 'Esqueci Minha Senha' }} 
+        />
+        <Stack.Screen 
+          name="Venda" 
+          component={VendaScreen} 
+          options={{ title: 'Vendas' }} // Adicionar a VendaScreen
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
